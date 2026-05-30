@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0b0f;--bg2:#111318;--bg3:#181c24;--bg4:#1e2330;
+  --gold:#f5c842;--gold2:#e8a800;--gold3:#ffd700;
+  --red:#e03c3c;--green:#2ecc71;--blue:#4a9eff;--purple:#9b59b6;
+  --text:#e8eaf0;--text2:#9aa3b8;--text3:#5a6278;
+  --border:#252b3a;--border2:#2e3650;
+  --card-shadow:0 4px 24px rgba(0,0,0,0.4);
+  --gold-glow:0 0 20px rgba(245,200,66,0.15);
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:14px}
+
+/* SIDEBAR */
+.sidebar{position:fixed;right:0;top:0;width:240px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:100;display:flex;flex-direction:column;transition:.3s}
+.logo{padding:24px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-weight:900;font-size:16px;color:#000;letter-spacing:-1px;flex-shrink:0}
+.logo-text{font-family:'Orbitron',monospace;font-weight:700;font-size:15px;color:var(--gold);letter-spacing:1px;line-height:1.2}
+.logo-sub{font-size:10px;color:var(--text3);font-family:'Cairo',sans-serif;font-weight:400;letter-spacing:0}
+.nav{flex:1;padding:16px 0;overflow-y:auto}
+.nav-section{padding:8px 20px 4px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;transition:.2s;color:var(--text2);font-size:13px;font-weight:600;position:relative;border-right:3px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(245,200,66,0.08);color:var(--gold);border-right-color:var(--gold)}
+.nav-item i{width:20px;text-align:center;font-size:15px}
+.nav-badge{margin-right:auto;background:var(--red);color:#fff;border-radius:20px;padding:2px 7px;font-size:10px;font-weight:700}
+
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.gym-status{display:flex;align-items:center;gap:8px;font-size:12px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* MAIN */
+.main{margin-right:240px;min-height:100vh;padding:0}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:18px;font-weight:700;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{width:38px;height:38px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:.2s;position:relative}
+.topbar-btn:hover{background:var(--bg4);color:var(--text)}
+.notif-dot{position:absolute;top:7px;left:7px;width:7px;height:7px;border-radius:50%;background:var(--red);border:2px solid var(--bg2)}
+.topbar-date{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#000;cursor:pointer}
+
+.content{padding:28px;display:none}
+.content.active{display:block}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden;transition:.3s;cursor:pointer}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--card-shadow)}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0}
+.stat-card.gold::after{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.stat-card.green::after{background:linear-gradient(90deg,#2ecc71,#27ae60)}
+.stat-card.red::after{background:linear-gradient(90deg,#e03c3c,#c0392b)}
+.stat-card.blue::after{background:linear-gradient(90deg,#4a9eff,#1a7acc)}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:14px}
+.stat-card.gold .stat-icon{background:rgba(245,200,66,0.12);color:var(--gold)}
+.stat-card.green .stat-icon{background:rgba(46,204,113,0.12);color:var(--green)}
+.stat-card.red .stat-icon{background:rgba(224,60,60,0.12);color:var(--red)}
+.stat-card.blue .stat-icon{background:rgba(74,158,255,0.12);color:var(--blue)}
+.stat-val{font-size:26px;font-weight:900;color:var(--text);font-family:'Orbitron',monospace;letter-spacing:-1px}
+.stat-label{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600}
+.stat-change{font-size:11px;margin-top:8px;display:flex;align-items:center;gap:4px;font-weight:600}
+.stat-change.up{color:var(--green)}.stat-change.down{color:var(--red)}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:24px}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-title{font-size:14px;font-weight:700;color:var(--text)}
+.card-badge{background:rgba(245,200,66,0.1);color:var(--gold);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700}
+
+/* CHART */
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:140px;padding-top:10px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{border-radius:6px 6px 0 0;width:100%;transition:.3s;cursor:pointer;position:relative}
+.bar:hover{filter:brightness(1.2)}
+.bar-label{font-size:10px;color:var(--text3);font-weight:600}
+.bar-val{font-size:9px;color:var(--text2);font-weight:700}
+
+/* MEMBERS TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;color:var(--text3);text-align:right;padding:10px 12px;border-bottom:1px solid var(--border);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+td{padding:12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700}
+.tag.active{background:rgba(46,204,113,0.12);color:var(--green)}
+.tag.expired{background:rgba(224,60,60,0.12);color:var(--red)}
+.tag.pending{background:rgba(245,200,66,0.12);color:var(--gold)}
+.tag.frozen{background:rgba(74,158,255,0.12);color:var(--blue)}
+.member-avatar{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+
+/* ACTIONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:.2s;font-family:'Cairo',sans-serif}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000}
+.btn-gold:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-outline:hover{background:var(--bg4);color:var(--text)}
+.btn-danger{background:rgba(224,60,60,0.12);color:var(--red);border:1px solid rgba(224,60,60,0.2)}
+.btn-danger:hover{background:rgba(224,60,60,0.2)}
+.btn-green{background:rgba(46,204,113,0.12);color:var(--green);border:1px solid rgba(46,204,113,0.2)}
+.btn-green:hover{background:rgba(46,204,113,0.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* BARCODE SCANNER */
+.scanner-area{background:var(--bg);border:2px dashed var(--border2);border-radius:16px;padding:32px;text-align:center;position:relative;margin-bottom:20px}
+.scanner-frame{width:160px;height:160px;margin:0 auto 20px;position:relative}
+.scanner-corner{position:absolute;width:24px;height:24px;border-color:var(--gold);border-style:solid}
+.sc-tl{top:0;right:0;border-width:3px 0 0 3px;border-radius:0 0 0 8px}
+.sc-tr{top:0;left:0;border-width:3px 3px 0 0;border-radius:0 0 8px 0}
+.sc-bl{bottom:0;right:0;border-width:0 0 3px 3px;border-radius:8px 0 0 0}
+.sc-br{bottom:0;left:0;border-width:0 3px 3px 0;border-radius:0 8px 0 0}
+.scanner-line{position:absolute;width:calc(100% - 12px);height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);right:6px;animation:scan 2s linear infinite}
+@keyframes scan{0%{top:10%}100%{top:90%}}
+.scanner-inner{width:100%;height:100%;border:1px solid rgba(245,200,66,0.1);border-radius:8px;background:rgba(245,200,66,0.02);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px}
+
+/* ATTENDANCE LOG */
+.attendance-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.attendance-item:last-child{border:none}
+.att-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.att-time{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.att-type{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:700}
+.att-in{background:rgba(46,204,113,0.12);color:var(--green)}
+.att-out{background:rgba(224,60,60,0.12);color:var(--red)}
+
+/* FINANCE */
+.finance-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.trans-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.trans-item:last-child{border:none}
+.trans-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.trans-amount.income{color:var(--green);font-weight:700}
+.trans-amount.expense{color:var(--red);font-weight:700}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px;width:500px;max-height:90vh;overflow-y:auto;position:relative}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.modal-sub{color:var(--text2);font-size:13px;margin-bottom:24px}
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;color:var(--text2);font-weight:700;margin-bottom:6px;display:block;letter-spacing:.5px}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Cairo',sans-serif;font-size:13px;outline:none;transition:.2s}
+.form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,200,66,0.1)}
+.form-select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Cairo',sans-serif;font-size:13px;outline:none;appearance:none}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.close-btn{position:absolute;top:20px;left:20px;width:32px;height:32px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:14px}
+.close-btn:hover{background:var(--bg4);color:var(--text)}
+
+/* PROGRESS RING */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ring-label{font-size:11px;color:var(--text2);font-weight:600}
+.ring-val{font-size:16px;font-weight:900;color:var(--text);font-family:'Orbitron',monospace}
+
+/* NOTIFICATION */
+.notif-toast{position:fixed;bottom:24px;left:24px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;font-size:13px;z-index:9999;transform:translateY(100px);opacity:0;transition:.4s;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+.notif-toast.show{transform:translateY(0);opacity:1}
+.notif-toast .notif-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-toast.success .notif-icon{background:rgba(46,204,113,0.15);color:var(--green)}
+.notif-toast.warning .notif-icon{background:rgba(245,200,66,0.15);color:var(--gold)}
+.notif-toast.whatsapp .notif-icon{background:rgba(37,211,102,0.15);color:#25d366}
+
+/* SETTINGS */
+.setting-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
+.setting-item:last-child{border:none}
+.setting-info h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.setting-info p{font-size:12px;color:var(--text2)}
+.toggle{width:46px;height:26px;background:var(--border2);border-radius:13px;cursor:pointer;position:relative;transition:.3s;flex-shrink:0}
+.toggle.on{background:var(--gold)}
+.toggle::after{content:'';position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.3s}
+.toggle.on::after{right:calc(100% - 23px)}
+
+/* REPORTS */
+.report-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center}
+.kpi-val{font-size:22px;font-weight:900;font-family:'Orbitron',monospace}
+.kpi-label{font-size:11px;color:var(--text2);margin-top:4px;font-weight:600}
+
+/* QUICK SCAN RESULT */
+.scan-result{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;display:none;margin-bottom:16px}
+.scan-result.show{display:block}
+
+/* SUBSCRIPTION PRICES */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.price-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:.3s}
+.price-card:hover{border-color:var(--gold);box-shadow:var(--gold-glow)}
+.price-type{font-size:12px;color:var(--text2);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.price-val{font-size:24px;font-weight:900;color:var(--gold);font-family:'Orbitron',monospace}
+.price-period{font-size:11px;color:var(--text3);margin-top:4px}
+
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-hdr h2{font-size:16px;font-weight:700}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.att-row-new{animation:slideIn .35s ease both}
+
+.members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.member-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;transition:.2s;cursor:pointer}
+.member-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.mc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.mc-avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.mc-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.mc-id{font-size:11px;color:var(--text3)}
+.progress-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;border-radius:2px;transition:.3s}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state i{font-size:48px;margin-bottom:16px;opacity:.3}
+.empty-state p{font-size:14px;font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">X</div>
+    <div>
+      <div class="logo-text">X GYM</div>
+      <div class="logo-sub">نظام إدارة متكامل</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">الرئيسية</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><i class="fas fa-chart-line"></i> لوحة التحكم</div>
+    <div class="nav-item" onclick="showPage('attendance')"><i class="fas fa-qrcode"></i> الحضور والباركود<span class="nav-badge" id="today-count">0</span></div>
+    <div class="nav-section">الأعضاء</div>
+    <div class="nav-item" onclick="showPage('members')"><i class="fas fa-users"></i> إدارة الأعضاء</div>
+    <div class="nav-item" onclick="showPage('subscriptions')"><i class="fas fa-id-card"></i> الاشتراكات</div>
+    <div class="nav-section">المالية</div>
+    <div class="nav-item" onclick="showPage('finance')"><i class="fas fa-wallet"></i> الدخل والمصروفات</div>
+    <div class="nav-item" onclick="showPage('reports')"><i class="fas fa-file-chart-column"></i> التقارير الشاملة</div>
+    <div class="nav-section">الإعدادات</div>
+    <div class="nav-item" onclick="showPage('settings')"><i class="fas fa-gear"></i> الإعدادات</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="gym-status"><div class="status-dot"></div><span style="font-size:12px;font-weight:700">الجيم مفتوح الآن</span></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px" id="current-time"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">لوحة التحكم</div>
+    <div class="topbar-right">
+      <div class="topbar-date"><i class="fas fa-calendar-alt"></i><span id="date-display"></span></div>
+      <span id="save-indicator" style="font-size:11px;font-weight:700;min-width:60px;text-align:center"></span>
+      <div class="topbar-btn" onclick="showNotif('تذكير: 3 اشتراكات تنتهي هذا الأسبوع','warning')"><i class="fas fa-bell"></i><div class="notif-dot"></div></div>
+      <div class="topbar-btn" onclick="sendWhatsApp()"><i class="fab fa-whatsapp" style="color:#25d366"></i></div>
+      <div class="avatar" title="المدير">م</div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="content active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card gold" onclick="showPage('members')">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-val" id="total-members">0</div>
+        <div class="stat-label">إجمالي الأعضاء</div>
+        <div class="stat-change up"><i class="fas fa-arrow-up"></i>+12 هذا الشهر</div>
+      </div>
+      <div class="stat-card green" onclick="showPage('attendance')">
+        <div class="stat-icon"><i class="fas fa-person-running"></i></div>
+        <div class="stat-val" id="today-attend">0</div>
+        <div class="stat-label">حضور اليوم</div>
+        <div class="stat-change up"><i class="fas fa-arrow-up"></i>+5 عن الأمس</div>
+      </div>
+      <div class="stat-card gold" onclick="showPage('finance')">
+        <div class="stat-icon"><i class="fas fa-coins"></i></div>
+        <div class="stat-val" id="total-revenue">0</div>
+        <div class="stat-label">إجمالي الإيرادات (جنيه)</div>
+        <div class="stat-change up"><i class="fas fa-arrow-up"></i>محدّث تلقائياً</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="stat-val">14</div>
+        <div class="stat-label">اشتراكات تنتهي قريبا</div>
+        <div class="stat-change down"><i class="fas fa-arrow-down"></i>تنبيه فوري</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-chart-bar" style="color:var(--gold);margin-left:6px"></i>الإيرادات الأسبوعية</div>
+          <div class="card-badge">هذا الأسبوع</div>
+        </div>
+        <div class="chart-bars" id="week-chart"></div>
+        <div style="display:flex;gap:16px;margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:3px;background:var(--gold)"></div>اشتراكات</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:3px;background:var(--blue)"></div>إضافي</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--gold);margin-left:6px"></i>آخر الحضور</div></div>
+        <div id="live-attendance"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div class="card" style="grid-column:span 2">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-triangle-exclamation" style="color:var(--red);margin-left:6px"></i>اشتراكات تنتهي قريباً</div>
+          <button class="btn btn-gold btn-sm" onclick="sendBulkWhatsApp()"><i class="fab fa-whatsapp"></i>إشعار جماعي</button>
+        </div>
+        <div id="expiring-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">توزيع الاشتراكات</div></div>
+        <div id="sub-donut" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="content" id="page-attendance">
+    <div class="section-hdr"><h2><i class="fas fa-qrcode" style="color:var(--gold);margin-left:8px"></i>نظام الحضور بالباركود</h2>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline btn-sm" onclick="exportAttendance()"><i class="fas fa-download"></i>تصدير</button>
+        <button class="btn btn-gold btn-sm" onclick="manualEntry()"><i class="fas fa-plus"></i>إدخال يدوي</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:380px 1fr;gap:20px">
+      <div>
+        <div class="scanner-area">
+          <div class="scanner-frame">
+            <div class="scanner-corner sc-tl"></div><div class="scanner-corner sc-tr"></div>
+            <div class="scanner-corner sc-bl"></div><div class="scanner-corner sc-br"></div>
+            <div class="scanner-line"></div>
+            <div class="scanner-inner"><i class="fas fa-barcode" style="font-size:32px;color:var(--gold);opacity:.4"></i><div style="font-size:11px;color:var(--text3)">أدخل الباركود أو افتح الكاميرا</div></div>
+          </div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px">أدخل كود العضو أو امسح الباركود</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input class="form-input" id="barcode-input" placeholder="كود الباركود أو رقم العضو..." style="flex:1" onkeydown="if(event.key==='Enter')scanMember()" />
+            <button class="btn btn-gold" onclick="scanMember()"><i class="fas fa-search"></i></button>
+          </div>
+          <button class="btn btn-outline" style="width:100%" onclick="openCameraScanner()"><i class="fas fa-camera" style="margin-left:6px"></i>مسح بالكاميرا (ZXing)</button>
+        </div>
+        <div class="scan-result" id="scan-result"></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">إحصاء اليوم</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="kpi-card"><div class="kpi-val" style="color:var(--green)" id="att-today-in">0</div><div class="kpi-label">دخول</div></div>
+            <div class="kpi-card"><div class="kpi-val" style="color:var(--red)" id="att-today-out">0</div><div class="kpi-label">خروج</div></div>
+            <div class="kpi-card"><div class="kpi-val" style="color:var(--blue)" id="att-today-now">0</div><div class="kpi-label">داخل الآن</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-list" style="color:var(--gold);margin-left:6px"></i>سجل الحضور اليومي</div><div class="card-badge" id="att-count-badge">0 سجل</div></div>
+        <div id="attendance-log" style="max-height:500px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div class="content" id="page-members">
+    <div class="section-hdr">
+      <h2><i class="fas fa-users" style="color:var(--gold);margin-left:8px"></i>إدارة الأعضاء</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input class="form-input" id="member-search" placeholder="بحث عن عضو..." style="width:220px" oninput="filterMembers(this.value)">
+        <select class="form-select" id="status-filter" onchange="filterMembers(document.getElementById('member-search').value)" style="width:140px">
+          <option value="">كل الحالات</option>
+          <option value="active">نشط</option>
+          <option value="expired">منتهي</option>
+          <option value="frozen">مجمد</option>
+        </select>
+        <button class="btn btn-gold" onclick="openAddMember()"><i class="fas fa-plus"></i>عضو جديد</button>
+      </div>
+    </div>
+    <div class="members-grid" id="members-grid"></div>
+  </div>
+
+  <!-- SUBSCRIPTIONS -->
+  <div class="content" id="page-subscriptions">
+    <div class="section-hdr">
+      <h2><i class="fas fa-id-card" style="color:var(--gold);margin-left:8px"></i>الباقات والاشتراكات</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="openModal('add-package-modal')"><i class="fas fa-plus"></i>باقة جديدة</button>
+        <button class="btn btn-gold btn-sm" onclick="saveSettings()"><i class="fas fa-save"></i>حفظ الأسعار</button>
+      </div>
+    </div>
+    <div class="price-grid" id="price-grid"></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">جدول الاشتراكات النشطة</div></div>
+      <div class="table-wrap"><table id="subs-table"></table></div>
+    </div>
+  </div>
+
+  <!-- FINANCE -->
+  <div class="content" id="page-finance">
+    <div class="section-hdr">
+      <h2><i class="fas fa-wallet" style="color:var(--gold);margin-left:8px"></i>الإدارة المالية</h2>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-green btn-sm" onclick="openAddIncome()"><i class="fas fa-plus"></i>دخل جديد</button>
+        <button class="btn btn-danger btn-sm" onclick="openAddExpense()"><i class="fas fa-minus"></i>مصروف جديد</button>
+      </div>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card green"><div class="stat-icon"><i class="fas fa-arrow-trend-up"></i></div><div class="stat-val" id="total-income">0</div><div class="stat-label">إجمالي الدخل (جنيه)</div></div>
+      <div class="stat-card red"><div class="stat-icon"><i class="fas fa-arrow-trend-down"></i></div><div class="stat-val" id="total-expense">0</div><div class="stat-label">إجمالي المصروفات (جنيه)</div></div>
+      <div class="stat-card gold"><div class="stat-icon"><i class="fas fa-scale-balanced"></i></div><div class="stat-val" id="net-profit">0</div><div class="stat-label">صافي الربح (جنيه)</div></div>
+    </div>
+    <div class="finance-row">
+      <div class="card"><div class="card-header"><div class="card-title" style="color:var(--green)"><i class="fas fa-arrow-up" style="margin-left:6px"></i>الدخل</div></div><div id="income-list"></div></div>
+      <div class="card"><div class="card-header"><div class="card-title" style="color:var(--red)"><i class="fas fa-arrow-down" style="margin-left:6px"></i>المصروفات</div></div><div id="expense-list"></div></div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="content" id="page-reports">
+    <div class="section-hdr"><h2><i class="fas fa-chart-pie" style="color:var(--gold);margin-left:8px"></i>التقارير الشاملة</h2>
+      <div style="display:flex;gap:10px">
+        <select class="form-select" style="width:160px"><option>هذا الشهر</option><option>الشهر الماضي</option><option>هذا العام</option></select>
+        <button class="btn btn-outline btn-sm"><i class="fas fa-print"></i>طباعة</button>
+        <button class="btn btn-gold btn-sm"><i class="fas fa-file-pdf"></i>PDF</button>
+      </div>
+    </div>
+    <div class="report-kpi" id="reports-kpi">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">ساعات الذروة</div></div>
+        <div id="peak-chart" style="display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:8px"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text3)" id="peak-labels"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">الإيرادات الشهرية</div></div>
+        <div id="monthly-chart" style="display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:8px"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text3)" id="monthly-labels"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="content" id="page-settings">
+  <div class="section-hdr"><h2><i class="fas fa-gear" style="color:var(--gold);margin-left:8px"></i>الإعدادات</h2>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" onclick="resetAllData()"><i class="fas fa-rotate-left"></i>إعادة تعيين</button>
+      <button class="btn btn-gold" onclick="saveSettings()"><i class="fas fa-save"></i>حفظ التغييرات</button>
+    </div>
+  </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-building" style="color:var(--gold);margin-left:6px"></i>بيانات الجيم</div></div>
+        <div class="form-group"><label class="form-label">اسم الجيم</label><input class="form-input" value="X Gym"></div>
+        <div class="form-group"><label class="form-label">العنوان</label><input class="form-input" value="شارع التحرير، القاهرة"></div>
+        <div class="form-group"><label class="form-label">رقم الهاتف</label><input class="form-input" id="gym-phone" value="+201234567890"></div>
+        <div class="form-group"><label class="form-label">واتساب التنبيهات</label><input class="form-input" id="whatsapp-num" value="+201234567890"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-bell" style="color:var(--gold);margin-left:6px"></i>إعدادات التنبيهات</div></div>
+        <div class="setting-item"><div class="setting-info"><h4>تنبيه انتهاء الاشتراك</h4><p>إرسال واتساب قبل انتهاء الاشتراك</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="setting-item"><div class="setting-info"><h4>تنبيه الحضور المزدوج</h4><p>تحذير عند مسح الباركود مرتين</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="setting-item"><div class="setting-info"><h4>تقرير يومي تلقائي</h4><p>إرسال ملخص يومي على واتساب</p></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="setting-item"><div class="setting-info"><h4>تنبيه الاشتراك المنتهي عند الدخول</h4><p>تحذير عند محاولة دخول عضو منتهي</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="form-group" style="margin-top:16px"><label class="form-label">أيام التنبيه المسبق</label><select class="form-select"><option>3 أيام</option><option selected>7 أيام</option><option>14 يوم</option></select></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-tags" style="color:var(--gold);margin-left:6px"></i>أسعار الاشتراكات</div></div>
+        <div id="price-settings"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-clock" style="color:var(--gold);margin-left:6px"></i>أوقات العمل</div></div>
+        <div class="form-row" style="margin-bottom:14px"><div><label class="form-label">يفتح الساعة</label><input class="form-input" type="time" value="06:00"></div><div><label class="form-label">يغلق الساعة</label><input class="form-input" type="time" value="24:00"></div></div>
+        <div class="setting-item"><div class="setting-info"><h4>الدخول مرة واحدة يومياً</h4><p>منع دخول العضو أكثر من مرة في اليوم</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="setting-item"><div class="setting-info"><h4>الجمعة إجازة</h4><p>إغلاق الجيم يوم الجمعة</p></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD MEMBER -->
+<div class="modal-overlay" id="add-member-modal">
+  <div class="modal">
+    <div class="close-btn" onclick="closeModal('add-member-modal')"><i class="fas fa-times"></i></div>
+    <h3><i class="fas fa-user-plus" style="color:var(--gold);margin-left:8px"></i>إضافة عضو جديد</h3>
+    <div class="modal-sub">أدخل بيانات العضو الجديد</div>
+    <div class="form-row"><div class="form-group" style="margin:0"><label class="form-label">الاسم الأول</label><input class="form-input" id="new-fname" placeholder="محمد"></div><div class="form-group" style="margin:0"><label class="form-label">الاسم الأخير</label><input class="form-input" id="new-lname" placeholder="أحمد"></div></div>
+    <div style="margin-bottom:16px"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">رقم الهاتف</label><input class="form-input" id="new-phone" placeholder="01XXXXXXXXX"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">البريد الإلكتروني</label><input class="form-input" id="new-email" placeholder="example@mail.com"></div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">نوع الاشتراك</label>
+        <select class="form-select" id="new-sub-type">
+          <option value="daily">يومي</option>
+          <option value="sessions10">10 جلسات</option>
+          <option value="sessions20">20 جلسة</option>
+          <option value="monthly" selected>شهري</option>
+          <option value="monthly_student">شهري طالب</option>
+          <option value="quarterly">ربع سنوي</option>
+          <option value="biannual">نصف سنوي</option>
+          <option value="annual">سنوي</option>
+          <option value="pt_session">PT جلسة</option>
+          <option value="pt_monthly">PT شهري</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0"><label class="form-label">تاريخ البداية</label><input class="form-input" type="date" id="new-start-date"></div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+    <div class="form-group"><label class="form-label">الجنس</label>
+      <select class="form-select" id="new-gender"><option value="male">ذكر</option><option value="female">أنثى</option></select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-gold" style="flex:1" onclick="addMember()"><i class="fas fa-user-plus"></i>إضافة العضو</button>
+      <button class="btn btn-outline" onclick="closeModal('add-member-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD INCOME -->
+<div class="modal-overlay" id="add-income-modal">
+  <div class="modal">
+    <div class="close-btn" onclick="closeModal('add-income-modal')"><i class="fas fa-times"></i></div>
+    <h3 style="color:var(--green)"><i class="fas fa-plus-circle" style="margin-left:8px"></i>إضافة دخل</h3>
+    <div class="modal-sub">تسجيل مصدر دخل جديد</div>
+    <div class="form-group"><label class="form-label">نوع الدخل</label>
+      <select class="form-select" id="income-type">
+        <option>اشتراك شهري</option><option>اشتراك ربع سنوي</option><option>اشتراك سنوي</option>
+        <option>بيع منتجات</option><option>تدريب خاص (PT)</option><option>أخرى</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">المبلغ (جنيه)</label><input class="form-input" type="number" id="income-amount" placeholder="0"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">التاريخ</label><input class="form-input" type="date" id="income-date"></div>
+    </div>
+    <div style="margin-bottom:12px"></div>
+    <div class="form-group"><label class="form-label">ملاحظات</label><input class="form-input" id="income-note" placeholder="اختياري..."></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-green" style="flex:1" onclick="addTransaction('income')"><i class="fas fa-plus"></i>إضافة</button>
+      <button class="btn btn-outline" onclick="closeModal('add-income-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD EXPENSE -->
+<div class="modal-overlay" id="add-expense-modal">
+  <div class="modal">
+    <div class="close-btn" onclick="closeModal('add-expense-modal')"><i class="fas fa-times"></i></div>
+    <h3 style="color:var(--red)"><i class="fas fa-minus-circle" style="margin-left:8px"></i>إضافة مصروف</h3>
+    <div class="modal-sub">تسجيل مصروف جديد</div>
+    <div class="form-group"><label class="form-label">نوع المصروف</label>
+      <select class="form-select" id="expense-type">
+        <option>إيجار</option><option>كهرباء</option><option>مياه</option><option>رواتب</option>
+        <option>صيانة أجهزة</option><option>منظفات</option><option>تسويق</option><option>أخرى</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">المبلغ (جنيه)</label><input class="form-input" type="number" id="expense-amount" placeholder="0"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">التاريخ</label><input class="form-input" type="date" id="expense-date"></div>
+    </div>
+    <div style="margin-bottom:12px"></div>
+    <div class="form-group"><label class="form-label">ملاحظات</label><input class="form-input" id="expense-note" placeholder="اختياري..."></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-danger" style="flex:1" onclick="addTransaction('expense')"><i class="fas fa-plus"></i>إضافة</button>
+      <button class="btn btn-outline" onclick="closeModal('add-expense-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD PACKAGE -->
+<div class="modal-overlay" id="add-package-modal">
+  <div class="modal" style="width:400px">
+    <div class="close-btn" onclick="closeModal('add-package-modal')"><i class="fas fa-times"></i></div>
+    <h3><i class="fas fa-plus-circle" style="color:var(--gold);margin-left:8px"></i>إضافة باقة جديدة</h3>
+    <div class="modal-sub">أنشئ باقة اشتراك مخصصة</div>
+    <div class="form-group"><label class="form-label">اسم الباقة</label><input class="form-input" id="pkg-name" placeholder="مثال: VIP شهري"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">السعر (جنيه)</label><input class="form-input" type="number" id="pkg-price" placeholder="0"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">المدة (يوم)</label><input class="form-input" type="number" id="pkg-days" placeholder="30"></div>
+    </div>
+    <div style="margin-bottom:8px"></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-gold" style="flex:1" onclick="addPackage()"><i class="fas fa-plus"></i>إضافة الباقة</button>
+      <button class="btn btn-outline" onclick="closeModal('add-package-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MEMBER BARCODE -->
+<div class="modal-overlay" id="member-barcode-modal">
+  <div class="modal" style="width:440px;text-align:center">
+    <div class="close-btn" onclick="closeModal('member-barcode-modal')"><i class="fas fa-times"></i></div>
+    <h3 style="margin-bottom:4px"><i class="fas fa-barcode" style="color:var(--gold);margin-left:8px"></i>باركود العضو</h3>
+    <div id="bc-member-name" style="color:var(--text2);font-size:13px;margin-bottom:4px"></div>
+    <div id="bc-member-id" style="color:var(--text3);font-size:11px;margin-bottom:16px"></div>
+
+    <!-- SVG مخفي للمكتبة -->
+    <svg id="member-barcode-svg" style="display:none"></svg>
+
+    <!-- الكارت المرئي -->
+    <div style="background:#fff;border-radius:16px;padding:20px 20px 16px;display:inline-block;margin-bottom:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);min-width:300px" id="barcode-card-preview">
+      <div style="font-family:Orbitron,monospace;font-size:20px;font-weight:900;color:#111;letter-spacing:2px;margin-bottom:4px">X GYM</div>
+      <div style="font-size:13px;font-weight:700;color:#222;margin-bottom:2px" id="bc-card-name"></div>
+      <div style="font-size:11px;color:#666;margin-bottom:12px" id="bc-card-sub"></div>
+      <canvas id="barcode-canvas" style="max-width:100%;border-radius:4px"></canvas>
+      <div style="font-size:10px;color:#999;margin-top:8px" id="bc-card-dates"></div>
+    </div>
+
+    <!-- تعليمات واتساب -->
+    <div id="wa-steps" style="background:rgba(37,211,102,0.07);border:1px solid rgba(37,211,102,0.2);border-radius:12px;padding:12px;margin-bottom:14px;text-align:right;display:none">
+      <div style="font-size:12px;font-weight:700;color:#25d366;margin-bottom:6px"><i class="fab fa-whatsapp" style="margin-left:6px"></i>خطوات إرسال الباركود</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.9">
+        ١. اضغط <strong style="color:var(--text)">"تحميل الصورة"</strong> لحفظ الباركود<br>
+        ٢. اضغط <strong style="color:var(--text)">"فتح واتساب"</strong><br>
+        ٣. في واتساب ارفق الصورة المحملة وأرسلها للعميل
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-gold btn-sm" onclick="printBarcode()"><i class="fas fa-print"></i>طباعة</button>
+      <button class="btn btn-sm" style="background:rgba(74,158,255,0.12);color:var(--blue);border:1px solid rgba(74,158,255,0.3)" onclick="downloadBarcodeImage()"><i class="fas fa-download"></i>تحميل الصورة</button>
+      <button class="btn btn-sm" style="background:rgba(37,211,102,0.12);color:#25d366;border:1px solid rgba(37,211,102,0.3)" onclick="sendBarcodeWhatsApp()"><i class="fab fa-whatsapp"></i>فتح واتساب</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('member-barcode-modal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT MEMBER -->
+<div class="modal-overlay" id="edit-member-modal">
+  <div class="modal">
+    <div class="close-btn" onclick="closeModal('edit-member-modal')"><i class="fas fa-times"></i></div>
+    <h3><i class="fas fa-user-pen" style="color:var(--gold);margin-left:8px"></i>تعديل بيانات العضو</h3>
+    <div class="modal-sub">تعديل معلومات العضو واشتراكه</div>
+    <input type="hidden" id="edit-member-id">
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">الاسم الأول</label><input class="form-input" id="edit-fname" placeholder="محمد"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">الاسم الأخير</label><input class="form-input" id="edit-lname" placeholder="أحمد"></div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">رقم الهاتف</label><input class="form-input" id="edit-phone" placeholder="01XXXXXXXXX"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">الجنس</label>
+        <select class="form-select" id="edit-gender"><option value="male">ذكر</option><option value="female">أنثى</option></select>
+      </div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">نوع الاشتراك</label>
+        <select class="form-select" id="edit-sub-type"></select>
+      </div>
+      <div class="form-group" style="margin:0"><label class="form-label">الحالة</label>
+        <select class="form-select" id="edit-status">
+          <option value="active">نشط</option>
+          <option value="frozen">مجمد</option>
+          <option value="expired">منتهي</option>
+          <option value="pending">معلق</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+    <div class="form-row">
+      <div class="form-group" style="margin:0"><label class="form-label">تاريخ البداية</label><input class="form-input" type="date" id="edit-start-date"></div>
+      <div class="form-group" style="margin:0"><label class="form-label">تاريخ الانتهاء</label><input class="form-input" type="date" id="edit-end-date"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold" style="flex:1" onclick="saveEditMember()"><i class="fas fa-save"></i>حفظ التعديلات</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteMember(document.getElementById('edit-member-id').value)"><i class="fas fa-trash"></i>حذف</button>
+      <button class="btn btn-outline" onclick="closeModal('edit-member-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RENEW SUBSCRIPTION -->
+<div class="modal-overlay" id="renew-modal">
+  <div class="modal" style="width:420px">
+    <div class="close-btn" onclick="closeModal('renew-modal')"><i class="fas fa-times"></i></div>
+    <h3><i class="fas fa-rotate" style="color:var(--gold);margin-left:8px"></i>تجديد الاشتراك</h3>
+    <div class="modal-sub" id="renew-member-name">تجديد اشتراك العضو</div>
+    <input type="hidden" id="renew-member-id">
+    <div class="form-group"><label class="form-label">نوع الاشتراك الجديد</label>
+      <select class="form-select" id="renew-sub-type"></select>
+    </div>
+    <div class="form-group"><label class="form-label">تاريخ بداية التجديد</label>
+      <input class="form-input" type="date" id="renew-start-date">
+    </div>
+    <div style="background:var(--bg4);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text2)" id="renew-summary"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-gold" style="flex:1" onclick="confirmRenew()"><i class="fas fa-rotate"></i>تأكيد التجديد</button>
+      <button class="btn btn-outline" onclick="closeModal('renew-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CAMERA SCANNER -->
+<div class="modal-overlay" id="camera-scanner-modal">
+  <div class="modal" style="width:440px;text-align:center">
+    <div class="close-btn" onclick="stopCamera()"><i class="fas fa-times"></i></div>
+    <h3 style="margin-bottom:16px"><i class="fas fa-camera" style="color:var(--gold);margin-left:8px"></i>مسح الباركود بالكاميرا</h3>
+    <div style="position:relative;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px">
+      <video id="camera-video" style="width:100%;display:block;border-radius:12px" autoplay playsinline muted></video>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+        <div style="width:220px;height:100px;border:2px solid var(--gold);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,0.4)">
+          <div class="scanner-line" style="position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scan 2s linear infinite"></div>
+        </div>
+      </div>
+    </div>
+    <div id="camera-status" style="font-size:12px;color:var(--text3);margin-bottom:12px">جاري تشغيل الكاميرا...</div>
+    <button class="btn btn-danger" style="width:100%" onclick="stopCamera()"><i class="fas fa-stop"></i>إيقاف الكاميرا</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="notif-toast" id="toast">
+  <div class="notif-icon"><i class="fas fa-check" id="toast-icon"></i></div>
+  <div><div style="font-weight:700;font-size:13px" id="toast-title"></div><div style="font-size:11px;color:var(--text2);margin-top:2px" id="toast-msg"></div></div>
+</div>
+
+<script>
+const COLORS=['#f5c842','#4a9eff','#2ecc71','#e03c3c','#9b59b6','#e67e22','#1abc9c'];
+const AVATAR_COLORS=['rgba(245,200,66,0.15)','rgba(74,158,255,0.15)','rgba(46,204,113,0.15)','rgba(224,60,60,0.15)','rgba(155,89,182,0.15)'];
+const AVATAR_TEXT=['#f5c842','#4a9eff','#2ecc71','#e03c3c','#9b59b6'];
+
+// ===== DEFAULT DATA =====
+const DEFAULT_MEMBERS=[];
+const DEFAULT_TRANSACTIONS={income:[],expense:[]};
+const DEFAULT_PRICES={
+  daily:50, sessions10:400, sessions20:700,
+  monthly:300, monthly_student:200,
+  quarterly:800, biannual:1400, annual:2500,
+  pt_session:150, pt_monthly:1200
+};
+const DEFAULT_PRICE_NAMES={
+  daily:'يومي', sessions10:'10 جلسات', sessions20:'20 جلسة',
+  monthly:'شهري', monthly_student:'شهري طالب',
+  quarterly:'ربع سنوي', biannual:'نصف سنوي', annual:'سنوي',
+  pt_session:'PT جلسة', pt_monthly:'PT شهري'
+};
+let DURATIONS={daily:1,sessions10:60,sessions20:90,monthly:30,monthly_student:30,quarterly:90,biannual:180,annual:365,pt_session:1,pt_monthly:30};
+
+// ===== LOCAL STORAGE =====
+const LS_KEYS={members:'xgym_members',transactions:'xgym_transactions',attendance:'xgym_attendance',prices:'xgym_prices',durations:'xgym_durations'};
+
+function lsSave(){
+  try{
+    localStorage.setItem(LS_KEYS.members,JSON.stringify(members));
+    localStorage.setItem(LS_KEYS.transactions,JSON.stringify(transactions));
+    localStorage.setItem(LS_KEYS.attendance,JSON.stringify(attendance));
+    localStorage.setItem(LS_KEYS.prices,JSON.stringify(prices));
+    localStorage.setItem(LS_KEYS.durations,JSON.stringify(DURATIONS));
+    localStorage.setItem('xgym_price_names',JSON.stringify(priceNames));
+    localStorage.setItem('xgym_last_save',new Date().toISOString());
+    const el=document.getElementById('save-indicator');
+    if(el){el.textContent='✓ محفوظ';el.style.color='var(--green)';setTimeout(()=>{el.textContent='';},2000);}
+  }catch(e){console.warn('تعذر الحفظ:',e);}
+}
+
+function lsLoad(){
+  try{
+    const m=localStorage.getItem(LS_KEYS.members);
+    const t=localStorage.getItem(LS_KEYS.transactions);
+    const a=localStorage.getItem(LS_KEYS.attendance);
+    const p=localStorage.getItem(LS_KEYS.prices);
+    const d=localStorage.getItem(LS_KEYS.durations);
+    const pn=localStorage.getItem('xgym_price_names');
+    return{
+      members:m?JSON.parse(m):null,
+      transactions:t?JSON.parse(t):null,
+      attendance:a?JSON.parse(a):null,
+      prices:p?JSON.parse(p):null,
+      durations:d?JSON.parse(d):null,
+      priceNames:pn?JSON.parse(pn):null,
+    };
+  }catch(e){return{};}
+}
+
+function resetAllData(){
+  if(!confirm('⚠️ هل أنت متأكد؟ سيتم حذف جميع البيانات نهائياً!'))return;
+  Object.values(LS_KEYS).forEach(k=>localStorage.removeItem(k));
+  localStorage.removeItem('xgym_price_names');
+  members=[];
+  transactions={income:[],expense:[]};
+  attendance=[];
+  prices={...DEFAULT_PRICES};
+  priceNames={...DEFAULT_PRICE_NAMES};
+  // Reset DURATIONS to defaults only (remove custom keys)
+  Object.keys(DURATIONS).forEach(k=>{if(k.startsWith('custom_'))delete DURATIONS[k];});
+  const baseDur={daily:1,sessions10:60,sessions20:90,monthly:30,monthly_student:30,quarterly:90,biannual:180,annual:365,pt_session:1,pt_monthly:30};
+  Object.assign(DURATIONS,baseDur);
+  renderDashboard();
+  showNotif('تم مسح جميع البيانات','warning');
+}
+
+// ===== LOAD DATA =====
+const _saved=lsLoad();
+let members=_saved.members||[];
+let transactions=_saved.transactions||{income:[],expense:[]};
+let attendance=_saved.attendance||[];
+let prices=_saved.prices||{...DEFAULT_PRICES};
+let priceNames=_saved.priceNames||{...DEFAULT_PRICE_NAMES};
+if(_saved.durations)Object.assign(DURATIONS,_saved.durations);
+
+
+function showPage(p){
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const titles={dashboard:'لوحة التحكم',attendance:'الحضور والباركود',members:'إدارة الأعضاء',subscriptions:'الاشتراكات',finance:'الإدارة المالية',reports:'التقارير الشاملة',settings:'الإعدادات'};
+  document.getElementById('page-title').textContent=titles[p];
+  const items=document.querySelectorAll('.nav-item');
+  items.forEach(i=>{if(i.textContent.includes(titles[p].slice(0,4)))i.classList.add('active')});
+  if(p==='dashboard')renderDashboard();
+  if(p==='members')renderMembers();
+  if(p==='attendance')renderAttendance();
+  if(p==='finance')renderFinance();
+  if(p==='reports')renderReports();
+  if(p==='subscriptions')renderSubscriptions();
+  if(p==='settings')renderPriceSettings();
+}
+
+function renderDashboard(){
+  // Update stat cards with real data
+  document.getElementById('total-members').textContent=members.length;
+  const totalRevEl=document.getElementById('total-revenue');
+  if(totalRevEl){const rev=transactions.income.reduce((s,t)=>s+t.amount,0);totalRevEl.textContent=rev>=1000?(rev/1000).toFixed(1)+'k':rev;}
+  const inCount=attendance.filter(a=>a.type==='in').length;
+  document.getElementById('today-attend').textContent=inCount;
+  const expiring=members.filter(m=>m.status==='active'&&m.days<=7);
+  // expiring count card (4th stat card)
+  const statCards=document.querySelectorAll('#page-dashboard .stat-card');
+  if(statCards[3])statCards[3].querySelector('.stat-val').textContent=expiring.length;
+
+  const days=['الأح','الإث','الثل','الأر','الخم','الجم','السب'];
+  const vals=[2800,3200,2500,4100,3800,5200,4600];
+  const ext=[200,400,100,600,300,800,500];
+  const chart=document.getElementById('week-chart');
+  const mx=Math.max(...vals);
+  chart.innerHTML=days.map((d,i)=>`<div class="bar-wrap">
+    <div class="bar-val">${(vals[i]/1000).toFixed(1)}k</div>
+    <div class="bar" style="height:${(vals[i]/mx)*120}px;background:linear-gradient(180deg,var(--gold),var(--gold2))" title="${vals[i]} جنيه"></div>
+    <div class="bar" style="height:${(ext[i]/mx)*120}px;background:var(--blue);margin-top:2px;border-radius:4px 4px 0 0" title="${ext[i]} جنيه"></div>
+    <div class="bar-label">${d}</div>
+  </div>`).join('');
+
+  const liveEl=document.getElementById('live-attendance');
+  const recent=attendance.slice(0,7);
+  if(!recent.length){liveEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);font-size:12px"><i class="fas fa-clock" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>لا يوجد حضور اليوم بعد</div>';}
+  else{liveEl.innerHTML=recent.map(r=>`<div class="attendance-item">
+    <div class="att-avatar" style="background:${AVATAR_COLORS[r.ci]};color:${AVATAR_TEXT[r.ci]}">${r.name.split(' ').map(w=>w[0]).join('')}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:700">${r.name}</div><div class="att-time"><i class="fas fa-clock"></i>${new Date(r.time).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div></div>
+    <div class="att-type ${r.type==='in'?'att-in':'att-out'}">${r.type==='in'?'دخول':'خروج'}</div>
+  </div>`).join('');}
+
+  const expEl=document.getElementById('expiring-list');
+  const expiringList=members.filter(m=>m.status==='active'&&m.days<=7);
+  expEl.innerHTML=expiringList.length?`<table style="width:100%;border-collapse:collapse">
+    <tr><th style="text-align:right;padding:8px;font-size:11px;color:var(--text3)">العضو</th><th style="font-size:11px;color:var(--text3);text-align:center">ينتهي خلال</th><th style="font-size:11px;color:var(--text3)">الهاتف</th><th></th></tr>
+    ${expiringList.map(m=>`<tr>
+      <td style="padding:10px 8px"><div style="font-weight:700;font-size:13px">${m.name}</div><div style="font-size:11px;color:var(--text3)">${m.id}</div></td>
+      <td style="text-align:center"><span class="tag expired"><i class="fas fa-clock"></i>${m.days} يوم</span></td>
+      <td style="font-size:12px;color:var(--text2)">${m.phone}</td>
+      <td><button class="btn btn-sm" style="background:rgba(37,211,102,0.1);color:#25d366;border:1px solid rgba(37,211,102,0.2);padding:5px 10px" onclick="sendWA('${m.phone}','${m.name}')"><i class="fab fa-whatsapp"></i></button></td>
+    </tr>`).join('')}
+  </table>`:'<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px"><i class="fas fa-check-circle" style="color:var(--green);font-size:24px;display:block;margin-bottom:8px"></i>لا توجد اشتراكات تنتهي قريباً</div>';
+
+  const subTypes={monthly:0,quarterly:0,biannual:0,annual:0};
+  members.forEach(m=>subTypes[m.type]=(subTypes[m.type]||0)+1);
+  const total=members.length;
+  const donutEl=document.getElementById('sub-donut');
+  const typeColors={monthly:COLORS[0],quarterly:COLORS[1],biannual:COLORS[2],annual:COLORS[4]};
+  donutEl.innerHTML=Object.entries(subTypes).map(([k,v])=>`<div style="display:flex;align-items:center;gap:8px">
+    <div style="width:8px;height:8px;border-radius:50%;background:${typeColors[k]};flex-shrink:0"></div>
+    <div style="flex:1;font-size:12px;color:var(--text2)">${priceNames[k]}</div>
+    <div style="font-size:12px;font-weight:700">${v}</div>
+    <div style="width:60px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden"><div style="width:${(v/total)*100}%;height:100%;background:${typeColors[k]};border-radius:2px"></div></div>
+  </div>`).join('');
+}
+
+function renderMembers(){
+  filterMembers('');
+}
+
+function filterMembers(q){
+  const statusF=document.getElementById('status-filter').value;
+  const filtered=members.filter(m=>{
+    const matchQ=!q||m.name.includes(q)||m.id.includes(q)||m.phone.includes(q);
+    const matchS=!statusF||m.status===statusF;
+    return matchQ&&matchS;
+  });
+  const grid=document.getElementById('members-grid');
+  if(!filtered.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><p>لا توجد نتائج</p></div>';return;}
+  grid.innerHTML=filtered.map(m=>{
+    const pct=Math.min(100,Math.max(0,(m.days/30)*100));
+    const stColors={active:'var(--green)',expired:'var(--red)',frozen:'var(--blue)',pending:'var(--gold)'};
+    const stClass={active:'active',expired:'expired',frozen:'frozen',pending:'pending'};
+    return`<div class="member-card" onclick="viewMember('${m.id}')">
+      <div class="mc-top">
+        <div class="mc-avatar" style="background:${AVATAR_COLORS[m.ci]};color:${AVATAR_TEXT[m.ci]}">${m.name.split(' ').map(w=>w[0]).join('')}</div>
+        <div style="flex:1">
+          <div class="mc-name">${m.name}</div>
+          <div class="mc-id">${m.id}</div>
+        </div>
+        <span class="tag ${stClass[m.status]||'pending'}">${m.status==='active'?'نشط':m.status==='expired'?'منتهي':m.status==='frozen'?'مجمد':'معلق'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--text2)">
+        <div><i class="fas fa-id-card" style="margin-left:4px;color:var(--text3)"></i>${priceNames[m.type]||m.type}</div>
+        <div><i class="fas fa-phone" style="margin-left:4px;color:var(--text3)"></i>${m.phone}</div>
+        <div><i class="fas fa-calendar" style="margin-left:4px;color:var(--text3)"></i>ينتهي: ${m.end}</div>
+        <div><i class="fas fa-clock" style="margin-left:4px;color:var(--text3)"></i>${m.days} يوم متبقي</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>50?'var(--green)':pct>20?'var(--gold)':'var(--red)'}"></div></div>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <button class="btn btn-sm btn-outline" style="flex:1" onclick="event.stopPropagation();sendWA('${m.phone}','${m.name}')"><i class="fab fa-whatsapp" style="color:#25d366"></i>واتساب</button>
+        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openRenewModal('${m.id}')"><i class="fas fa-rotate"></i>تجديد</button>
+        <button class="btn btn-sm" style="background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)" onclick="event.stopPropagation();viewMember('${m.id}')"><i class="fas fa-barcode"></i></button>
+        <button class="btn btn-sm" style="background:rgba(74,158,255,0.1);color:var(--blue);border:1px solid rgba(74,158,255,0.2)" onclick="event.stopPropagation();openEditMember('${m.id}')"><i class="fas fa-pen"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function scanMember(){
+  const val=document.getElementById('barcode-input').value.trim();
+  if(!val)return;
+  const member=members.find(m=>m.id===val||m.barcode===val||m.phone===val||m.name.includes(val));
+  const result=document.getElementById('scan-result');
+  if(member){
+    const today=new Date().toDateString();
+    const alreadyIn=attendance.find(a=>a.id===member.id&&new Date(a.time).toDateString()===today&&a.type==='in'&&!a.exit);
+    if(member.status==='expired'){
+      playBeep('error');
+      result.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:4px">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(224,60,60,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--red);flex-shrink:0"><i class="fas fa-ban"></i></div>
+        <div><div style="font-weight:700;font-size:15px;color:var(--red)">مرفوض - اشتراك منتهي</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${member.name} — ${member.id}</div><div style="font-size:11px;color:var(--red);margin-top:4px"><i class="fas fa-triangle-exclamation"></i> انتهى في ${member.end}</div></div>
+      </div>`;
+      result.classList.add('show');
+      result.style.borderColor='var(--red)';
+      showNotif('اشتراك منتهي: '+member.name,'warning');
+      document.getElementById('barcode-input').value='';
+      return;
+    }
+    const type=alreadyIn?'out':'in';
+    playBeep(type==='in'?'success':'out');
+    const record={id:member.id,name:member.name,time:new Date().toISOString(),type,ci:member.ci};
+    if(type==='out'&&alreadyIn)alreadyIn.exit=true;
+    attendance.unshift(record);
+    lsSave();
+    const inCount=attendance.filter(a=>a.type==='in').length;
+    const outCount=attendance.filter(a=>a.type==='out').length;
+    document.getElementById('att-today-in').textContent=inCount;
+    document.getElementById('att-today-out').textContent=outCount;
+    document.getElementById('att-today-now').textContent=Math.max(0,inCount-outCount);
+    document.getElementById('today-count').textContent=inCount;
+    document.getElementById('today-attend').textContent=inCount;
+    result.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:4px">
+      <div style="width:44px;height:44px;border-radius:12px;background:${AVATAR_COLORS[member.ci]};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${AVATAR_TEXT[member.ci]};flex-shrink:0">${member.name.split(' ').map(w=>w[0]).join('')}</div>
+      <div style="flex:1"><div style="font-weight:700;font-size:15px">${member.name}</div><div style="font-size:12px;color:var(--text2)">${member.id} — ${priceNames[member.type]}</div><div style="margin-top:6px"><span class="att-type ${type==='in'?'att-in':'att-out'}" style="font-size:12px;padding:4px 10px">${type==='in'?'✓ دخول':'✓ خروج'}</span></div></div>
+      <div style="text-align:left"><div style="font-size:11px;color:var(--text3)">${new Date().toLocaleTimeString('ar-EG')}</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${member.days} يوم متبقي</div></div>
+    </div>`;
+    result.style.borderColor=type==='in'?'var(--green)':'var(--red)';
+    result.classList.add('show');
+    showNotif((type==='in'?'دخول: ':'خروج: ')+member.name,'success');
+    renderAttendanceLog();
+    document.getElementById('barcode-input').value='';
+  }else{
+    playBeep('error');
+    result.innerHTML=`<div style="text-align:center;padding:8px;color:var(--red)"><i class="fas fa-circle-xmark" style="font-size:24px;margin-bottom:6px;display:block"></i>لم يتم العثور على العضو</div>`;
+    result.style.borderColor='var(--red)';
+    result.classList.add('show');
+    document.getElementById('barcode-input').value='';
+  }
+}
+
+function renderAttendance(){
+  renderAttendanceLog();
+  const inCount=attendance.filter(a=>a.type==='in').length;
+  const outCount=attendance.filter(a=>a.type==='out').length;
+  document.getElementById('att-today-in').textContent=inCount;
+  document.getElementById('att-today-out').textContent=outCount;
+  document.getElementById('att-today-now').textContent=Math.max(0,inCount-outCount);
+  document.getElementById('att-count-badge').textContent=attendance.length+' سجل';
+}
+
+// ===== أصوات =====
+const _ac=new (window.AudioContext||window.webkitAudioContext||function(){return null;})();
+function playBeep(type){
+  if(!_ac)return;
+  try{
+    const o=_ac.createOscillator();
+    const g=_ac.createGain();
+    o.connect(g);g.connect(_ac.destination);
+    if(type==='success'){
+      // صوت دخول — نغمتين صاعدتين
+      o.type='sine';
+      o.frequency.setValueAtTime(600,_ac.currentTime);
+      o.frequency.setValueAtTime(900,_ac.currentTime+0.12);
+      g.gain.setValueAtTime(0.4,_ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,_ac.currentTime+0.35);
+      o.start(_ac.currentTime);o.stop(_ac.currentTime+0.35);
+    }else if(type==='out'){
+      // صوت خروج — نغمة نازلة
+      o.type='sine';
+      o.frequency.setValueAtTime(700,_ac.currentTime);
+      o.frequency.setValueAtTime(450,_ac.currentTime+0.15);
+      g.gain.setValueAtTime(0.3,_ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,_ac.currentTime+0.3);
+      o.start(_ac.currentTime);o.stop(_ac.currentTime+0.3);
+    }else{
+      // صوت خطأ — buzz
+      o.type='square';
+      o.frequency.setValueAtTime(200,_ac.currentTime);
+      g.gain.setValueAtTime(0.3,_ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,_ac.currentTime+0.4);
+      o.start(_ac.currentTime);o.stop(_ac.currentTime+0.4);
+    }
+  }catch(e){}
+}
+
+function renderAttendanceLog(){
+  const log=document.getElementById('attendance-log');
+  if(!attendance.length){
+    log.innerHTML='<div class="empty-state"><i class="fas fa-qrcode"></i><p>لا يوجد حضور اليوم بعد</p></div>';
+    return;
+  }
+  // فلترة سجلات اليوم فقط
+  const today=new Date().toDateString();
+  const todayLogs=attendance.filter(a=>new Date(a.time).toDateString()===today);
+  const allLogs=todayLogs.length?todayLogs:attendance;
+  log.innerHTML=allLogs.map((a,i)=>`
+    <div class="attendance-item att-row-new" style="animation:slideIn .35s ease ${i===0?.0:.0}s both">
+      <div class="att-avatar" style="background:${AVATAR_COLORS[a.ci%5]};color:${AVATAR_TEXT[a.ci%5]}">${a.name.split(' ').map(w=>w[0]).join('')}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${a.name}</div>
+        <div class="att-time"><i class="fas fa-clock"></i>${new Date(a.time).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="att-type ${a.type==='in'?'att-in':'att-out'}">${a.type==='in'?'🟢 دخول':'🔴 خروج'}</div>
+        <div style="font-size:10px;color:var(--text3)">${new Date(a.time).toLocaleDateString('ar-EG',{day:'numeric',month:'short'})}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('att-count-badge').textContent=allLogs.length+' سجل اليوم';
+}
+
+function renderFinance(){
+  const totalInc=transactions.income.reduce((s,t)=>s+t.amount,0);
+  const totalExp=transactions.expense.reduce((s,t)=>s+t.amount,0);
+  const net=totalInc-totalExp;
+  document.getElementById('total-income').textContent=totalInc.toLocaleString('ar-EG');
+  document.getElementById('total-expense').textContent=totalExp.toLocaleString('ar-EG');
+  document.getElementById('net-profit').textContent=net.toLocaleString('ar-EG');
+  const incIcons={اشتراك:'fa-id-card','بيع':'fa-shopping-bag',تدريب:'fa-dumbbell',أخرى:'fa-circle-dollar'};
+  const expIcons={إيجار:'fa-building',كهرباء:'fa-bolt',مياه:'fa-droplet',رواتب:'fa-users',صيانة:'fa-wrench',منظفات:'fa-spray-can',تسويق:'fa-bullhorn',أخرى:'fa-receipt'};
+  document.getElementById('income-list').innerHTML=transactions.income.map(t=>`<div class="trans-item">
+    <div class="trans-icon" style="background:rgba(46,204,113,0.1);color:var(--green)"><i class="fas ${Object.keys(incIcons).find(k=>t.type.includes(k))?incIcons[Object.keys(incIcons).find(k=>t.type.includes(k))]:'fa-coins'}"></i></div>
+    <div style="flex:1;padding:0 10px"><div style="font-size:13px;font-weight:700">${t.type}</div><div style="font-size:11px;color:var(--text3)">${t.date} ${t.note?'• '+t.note:''}</div></div>
+    <div class="trans-amount income">+${t.amount.toLocaleString()} ج</div>
+  </div>`).join('');
+  document.getElementById('expense-list').innerHTML=transactions.expense.map(t=>`<div class="trans-item">
+    <div class="trans-icon" style="background:rgba(224,60,60,0.1);color:var(--red)"><i class="fas ${Object.keys(expIcons).find(k=>t.type.includes(k))?expIcons[Object.keys(expIcons).find(k=>t.type.includes(k))]:'fa-receipt'}"></i></div>
+    <div style="flex:1;padding:0 10px"><div style="font-size:13px;font-weight:700">${t.type}</div><div style="font-size:11px;color:var(--text3)">${t.date} ${t.note?'• '+t.note:''}</div></div>
+    <div class="trans-amount expense">-${t.amount.toLocaleString()} ج</div>
+  </div>`).join('');
+}
+
+function renderReports(){
+  // Real KPIs
+  const active=members.filter(m=>m.status==='active').length;
+  const expired=members.filter(m=>m.status==='expired').length;
+  const totalInc=transactions.income.reduce((s,t)=>s+t.amount,0);
+  const retention=members.length?Math.round((active/members.length)*100):0;
+  document.getElementById('reports-kpi').innerHTML=`
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--gold)">${members.length}</div><div class="kpi-label">إجمالي الأعضاء</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">${active}</div><div class="kpi-label">اشتراكات نشطة</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--blue)">${attendance.length}</div><div class="kpi-label">إجمالي الزيارات</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${expired}</div><div class="kpi-label">اشتراكات منتهية</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--gold)">${(totalInc/1000).toFixed(1)}k</div><div class="kpi-label">إجمالي الإيرادات</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">${retention}%</div><div class="kpi-label">معدل الاحتفاظ</div></div>
+  `;
+  const hours=['6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22'];
+  const hvals=[5,8,14,22,18,15,12,10,8,14,20,28,35,30,22,15,8];
+  const mx=Math.max(...hvals);
+  const pc=document.getElementById('peak-chart');
+  const pl=document.getElementById('peak-labels');
+  pc.innerHTML=hvals.map((v,i)=>`<div style="flex:1;display:flex;align-items:flex-end">
+    <div style="width:100%;height:${(v/mx)*100}%;background:${v===mx?'var(--gold)':'rgba(245,200,66,0.35)'};border-radius:3px 3px 0 0;min-height:4px;transition:.3s" title="${v} شخص"></div>
+  </div>`).join('');
+  pl.innerHTML=hours.filter((_,i)=>i%3===0).map(h=>`<span>${h}</span>`).join('');
+
+  const months=['يول','أغس','سبت','أكت','نوف','ديس','يناير'];
+  const mvals=[12000,14500,11800,16200,15600,18400,18400];
+  const mmx=Math.max(...mvals);
+  const mc=document.getElementById('monthly-chart');
+  const ml=document.getElementById('monthly-labels');
+  mc.innerHTML=mvals.map((v,i)=>`<div style="flex:1;display:flex;align-items:flex-end">
+    <div style="width:100%;height:${(v/mmx)*100}%;background:${i===mvals.length-1?'var(--gold)':'var(--blue)'};border-radius:3px 3px 0 0;min-height:4px;opacity:${i===mvals.length-1?1:0.6}" title="${v.toLocaleString()} ج"></div>
+  </div>`).join('');
+  ml.innerHTML=months.map(m=>`<span>${m}</span>`).join('');
+}
+
+function addPackage(){
+  const name=document.getElementById('pkg-name').value.trim();
+  const price=parseInt(document.getElementById('pkg-price').value);
+  const days=parseInt(document.getElementById('pkg-days').value);
+  if(!name||!price||!days){showNotif('أدخل جميع البيانات','warning');return;}
+  const key='custom_'+Date.now();
+  prices[key]=price;
+  priceNames[key]=name;
+  DURATIONS[key]=days;
+  lsSave();
+  closeModal('add-package-modal');
+  renderSubscriptions();
+  showNotif('تمت إضافة الباقة: '+name,'success');
+}
+
+function deletePackage(key){
+  const builtIn=['daily','sessions10','sessions20','monthly','monthly_student','quarterly','biannual','annual','pt_session','pt_monthly'];
+  if(builtIn.includes(key)){showNotif('لا يمكن حذف الباقات الأساسية','warning');return;}
+  if(!confirm('حذف الباقة: '+priceNames[key]+'؟'))return;
+  delete prices[key];delete priceNames[key];delete DURATIONS[key];
+  lsSave();renderSubscriptions();showNotif('تم حذف الباقة','success');
+}
+
+function renderSubscriptions(){
+  const pg=document.getElementById('price-grid');
+  pg.innerHTML=Object.entries(prices).map(([k,v])=>`<div class="price-card" style="position:relative">
+    <div class="price-type">${priceNames[k]||k}</div>
+    <div class="price-val">${v.toLocaleString()}</div>
+    <div class="price-period">${DURATIONS[k]?DURATIONS[k]+' يوم':'—'} | جنيه مصري</div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn btn-outline btn-sm" style="flex:1;font-size:11px" onclick="editPrice('${k}')"><i class="fas fa-edit"></i>تعديل</button>
+      ${k.startsWith('custom_')?`<button class="btn btn-danger btn-sm" onclick="deletePackage('${k}')"><i class="fas fa-trash"></i></button>`:''}
+    </div>
+  </div>`).join('');
+
+  const tbl=document.getElementById('subs-table');
+  if(!members.length){tbl.innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3)"><i class="fas fa-users" style="font-size:32px;display:block;margin-bottom:12px;opacity:.3"></i>لا يوجد أعضاء بعد</td></tr>';return;}
+  tbl.innerHTML=`<thead><tr>
+    <th>العضو</th><th>نوع الاشتراك</th><th>تاريخ البداية</th><th>تاريخ الانتهاء</th><th>الحالة</th><th>الإجراءات</th>
+  </tr></thead><tbody>${members.map(m=>`<tr>
+    <td><div style="font-weight:700">${m.name}</div><div style="font-size:11px;color:var(--text3)">${m.id}</div></td>
+    <td>${priceNames[m.type]||m.type}</td>
+    <td>${m.start}</td>
+    <td>${m.end}</td>
+    <td><span class="tag ${m.status==='active'?'active':m.status==='expired'?'expired':m.status==='frozen'?'frozen':'pending'}">${m.status==='active'?'نشط':m.status==='expired'?'منتهي':m.status==='frozen'?'مجمد':'معلق'}</span></td>
+    <td style="display:flex;gap:6px"><button class="btn btn-sm btn-outline" onclick="openRenewModal('${m.id}')"><i class="fas fa-rotate"></i>تجديد</button><button class="btn btn-sm" style="background:rgba(74,158,255,0.1);color:var(--blue);border:1px solid rgba(74,158,255,0.2)" onclick="openEditMember('${m.id}')"><i class="fas fa-pen"></i>تعديل</button><button class="btn btn-sm" style="background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid rgba(245,200,66,0.2)" onclick="viewMember('${m.id}')"><i class="fas fa-barcode"></i></button></td>
+  </tr>`).join('')}</tbody>`;
+}
+
+function renderPriceSettings(){
+  const ps=document.getElementById('price-settings');
+  ps.innerHTML=Object.entries(prices).map(([k,v])=>`<div class="form-group">
+    <label class="form-label">${priceNames[k]||k}</label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input class="form-input" type="number" value="${v}" id="ps-${k}" onchange="prices['${k}']=parseInt(this.value);lsSave()" style="flex:1">
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap">جنيه</span>
+    </div>
+  </div>`).join('');
+}
+
+function rebuildSubTypeSelect(){
+  const sel=document.getElementById('new-sub-type');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML=Object.entries(priceNames).map(([k,v])=>`<option value="${k}">${v} — ${(prices[k]||0).toLocaleString()} ج</option>`).join('');
+  if(cur)sel.value=cur;
+}
+
+function editPrice(key){
+  const newPrice=prompt(`السعر الجديد لـ ${priceNames[key]} (الحالي: ${prices[key]} جنيه):`);
+  if(newPrice&&!isNaN(newPrice)&&parseInt(newPrice)>0){
+    prices[key]=parseInt(newPrice);
+    lsSave();
+    renderSubscriptions();
+    showNotif('تم تحديث سعر '+priceNames[key]+' إلى '+parseInt(newPrice)+' جنيه','success');
+  }
+}
+
+function addMember(){
+  const fn=document.getElementById('new-fname').value.trim();
+  const ln=document.getElementById('new-lname').value.trim();
+  const phone=document.getElementById('new-phone').value.trim();
+  const type=document.getElementById('new-sub-type').value;
+  const start=document.getElementById('new-start-date').value;
+  const gender=document.getElementById('new-gender').value;
+  if(!fn||!phone){showNotif('الاسم ورقم الهاتف مطلوبان','warning');return;}
+  if(members.find(m=>m.phone===phone)){showNotif('رقم الهاتف مسجل بالفعل!','warning');return;}
+  const dur=DURATIONS[type]||30;
+  const startDate=start?new Date(start):new Date();
+  const endDate=new Date(startDate);
+  endDate.setDate(endDate.getDate()+dur);
+  const num=String(members.length+1).padStart(4,'0');
+  const id='XG-'+num;
+  const barcode='XGM'+num+phone.slice(-4);
+  const newMember={
+    id,name:fn+(ln?' '+ln:''),phone,type,status:'active',
+    start:startDate.toISOString().split('T')[0],
+    end:endDate.toISOString().split('T')[0],
+    days:dur,ci:members.length%5,gender,barcode
+  };
+  members.push(newMember);
+  transactions.income.push({type:'اشتراك '+(priceNames[type]||type),amount:prices[type]||0,date:startDate.toISOString().split('T')[0],note:fn+(ln?' '+ln:'')});
+  lsSave();
+  closeModal('add-member-modal');
+  renderDashboard();
+  renderMembers();
+  showNotif('تمت إضافة العضو: '+fn+(ln?' '+ln:''),'success');
+  // فتح باركود العضو الجديد تلقائياً
+  setTimeout(()=>viewMember(id),400);
+}
+
+function addTransaction(ttype){
+  const type=document.getElementById(ttype+'-type').value;
+  const amount=parseInt(document.getElementById(ttype+'-amount').value);
+  const date=document.getElementById(ttype+'-date').value||new Date().toISOString().split('T')[0];
+  const note=document.getElementById(ttype+'-note').value;
+  if(!amount||amount<=0){showNotif('أدخل مبلغاً صحيحاً','warning');return;}
+  transactions[ttype].unshift({type,amount,date,note});
+  lsSave();
+  closeModal('add-'+ttype+'-modal');
+  renderFinance();
+  showNotif('تمت إضافة '+(ttype==='income'?'الدخل':'المصروف'),'success');
+}
+
+function openRenewModal(id){
+  const m=members.find(x=>x.id===id);
+  if(!m)return;
+  document.getElementById('renew-member-id').value=id;
+  document.getElementById('renew-member-name').textContent='تجديد اشتراك: '+m.name;
+  document.getElementById('renew-start-date').value=new Date().toISOString().split('T')[0];
+  // Build sub type select
+  const sel=document.getElementById('renew-sub-type');
+  sel.innerHTML=Object.entries(priceNames).map(([k,v])=>`<option value="${k}" ${k===m.type?'selected':''}>${v} — ${(prices[k]||0).toLocaleString()} جنيه</option>`).join('');
+  updateRenewSummary();
+  sel.onchange=updateRenewSummary;
+  document.getElementById('renew-start-date').oninput=updateRenewSummary;
+  openModal('renew-modal');
+}
+
+function updateRenewSummary(){
+  const type=document.getElementById('renew-sub-type').value;
+  const start=document.getElementById('renew-start-date').value;
+  if(!type||!start){document.getElementById('renew-summary').textContent='';return;}
+  const dur=DURATIONS[type]||30;
+  const endDate=new Date(start);
+  endDate.setDate(endDate.getDate()+dur);
+  document.getElementById('renew-summary').innerHTML=`
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>الباقة:</span><strong>${priceNames[type]}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>المدة:</span><strong>${dur} يوم</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>ينتهي في:</span><strong>${endDate.toISOString().split('T')[0]}</strong></div>
+    <div style="display:flex;justify-content:space-between"><span>المبلغ:</span><strong style="color:var(--green)">${(prices[type]||0).toLocaleString()} جنيه</strong></div>
+  `;
+}
+
+function confirmRenew(){
+  const id=document.getElementById('renew-member-id').value;
+  const type=document.getElementById('renew-sub-type').value;
+  const start=document.getElementById('renew-start-date').value;
+  const m=members.find(x=>x.id===id);
+  if(!m||!type||!start){showNotif('أدخل جميع البيانات','warning');return;}
+  const dur=DURATIONS[type]||30;
+  const startDate=new Date(start);
+  const endDate=new Date(start);
+  endDate.setDate(endDate.getDate()+dur);
+  m.type=type;
+  m.start=startDate.toISOString().split('T')[0];
+  m.end=endDate.toISOString().split('T')[0];
+  m.days=dur;
+  m.status='active';
+  transactions.income.push({type:'تجديد — '+(priceNames[type]||type),amount:prices[type]||0,date:startDate.toISOString().split('T')[0],note:m.name});
+  lsSave();
+  closeModal('renew-modal');
+  showNotif('تم تجديد اشتراك: '+m.name,'success');
+  renderMembers();
+  if(document.getElementById('page-subscriptions').classList.contains('active'))renderSubscriptions();
+}
+
+function openEditMember(id){
+  const m=members.find(x=>x.id===id);
+  if(!m)return;
+  document.getElementById('edit-member-id').value=id;
+  const nameParts=m.name.split(' ');
+  document.getElementById('edit-fname').value=nameParts[0]||'';
+  document.getElementById('edit-lname').value=nameParts.slice(1).join(' ')||'';
+  document.getElementById('edit-phone').value=m.phone||'';
+  document.getElementById('edit-gender').value=m.gender||'male';
+  document.getElementById('edit-status').value=m.status||'active';
+  document.getElementById('edit-start-date').value=m.start||'';
+  document.getElementById('edit-end-date').value=m.end||'';
+  // Build sub type select
+  const sel=document.getElementById('edit-sub-type');
+  sel.innerHTML=Object.entries(priceNames).map(([k,v])=>`<option value="${k}" ${k===m.type?'selected':''}>${v} — ${(prices[k]||0).toLocaleString()} جنيه</option>`).join('');
+  openModal('edit-member-modal');
+}
+
+function saveEditMember(){
+  const id=document.getElementById('edit-member-id').value;
+  const m=members.find(x=>x.id===id);
+  if(!m)return;
+  const fn=document.getElementById('edit-fname').value.trim();
+  const ln=document.getElementById('edit-lname').value.trim();
+  const phone=document.getElementById('edit-phone').value.trim();
+  if(!fn||!phone){showNotif('الاسم والهاتف مطلوبان','warning');return;}
+  m.name=fn+(ln?' '+ln:'');
+  m.phone=phone;
+  m.gender=document.getElementById('edit-gender').value;
+  m.type=document.getElementById('edit-sub-type').value;
+  m.status=document.getElementById('edit-status').value;
+  m.start=document.getElementById('edit-start-date').value;
+  m.end=document.getElementById('edit-end-date').value;
+  // Recalc days remaining
+  if(m.end){const diff=Math.ceil((new Date(m.end)-new Date())/(1000*60*60*24));m.days=Math.max(0,diff);}
+  // Update barcode if phone changed
+  const num=m.id.replace('XG-','');
+  m.barcode='XGM'+num+phone.slice(-4);
+  lsSave();
+  closeModal('edit-member-modal');
+  showNotif('تم تحديث بيانات: '+m.name,'success');
+  renderMembers();
+  if(document.getElementById('page-subscriptions').classList.contains('active'))renderSubscriptions();
+}
+
+function deleteMember(id){
+  const m=members.find(x=>x.id===id);
+  if(!m)return;
+  if(!confirm('⚠️ هل تريد حذف العضو: '+m.name+'؟\nلن يمكن التراجع عن هذا الإجراء!'))return;
+  members=members.filter(x=>x.id!==id);
+  lsSave();
+  closeModal('edit-member-modal');
+  showNotif('تم حذف العضو: '+m.name,'warning');
+  renderMembers();
+  document.getElementById('total-members').textContent=members.length;
+  if(document.getElementById('page-subscriptions').classList.contains('active'))renderSubscriptions();
+}
+
+function renewMember(id){openRenewModal(id);}
+
+function sendWA(phone,name){
+  const msg=`مرحباً ${name}،\nنود تذكيرك بأن اشتراكك في *X Gym* على وشك الانتهاء.\nللتجديد تواصل معنا أو زورنا في الجيم.\nشكراً 🏋️`;
+  const url=`https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+  showNotif('تم إرسال رسالة واتساب لـ '+name,'whatsapp');
+}
+
+function sendWhatsApp(){
+  const phone=document.getElementById('whatsapp-num')?document.getElementById('whatsapp-num').value:'+201234567890';
+  const msg='مرحباً، هذا تقرير X Gym اليومي 🏋️\nإجمالي الأعضاء: '+members.length+'\nالحضور اليوم: '+attendance.filter(a=>a.type==='in').length;
+  window.open(`https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  showNotif('تم إرسال التقرير على واتساب','whatsapp');
+}
+
+function sendBulkWhatsApp(){
+  const expiring=members.filter(m=>m.status==='active'&&m.days<=7);
+  expiring.forEach((m,i)=>setTimeout(()=>sendWA(m.phone,m.name),i*300));
+  showNotif('تم إرسال '+expiring.length+' رسائل واتساب','whatsapp');
+}
+
+function openAddMember(){document.getElementById('new-start-date').value=new Date().toISOString().split('T')[0];rebuildSubTypeSelect();openModal('add-member-modal');}
+function openAddIncome(){document.getElementById('income-date').value=new Date().toISOString().split('T')[0];openModal('add-income-modal');}
+function openAddExpense(){document.getElementById('expense-date').value=new Date().toISOString().split('T')[0];openModal('add-expense-modal');}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+function manualEntry(){
+  document.getElementById('barcode-input').focus();
+  showNotif('أدخل رقم العضو أو اسمه','warning');
+}
+function exportAttendance(){showNotif('جاري تصدير بيانات الحضور...','success')}
+let _currentBarcodeId=null;
+
+function viewMember(id){
+  const m=members.find(x=>x.id===id);
+  if(!m)return;
+  _currentBarcodeId=id;
+  const bc=m.barcode||m.id;
+  document.getElementById('bc-member-name').textContent=m.name;
+  document.getElementById('bc-member-id').textContent=m.id+' — '+(priceNames[m.type]||m.type);
+  document.getElementById('bc-card-name').textContent=m.name;
+  document.getElementById('bc-card-sub').textContent=(priceNames[m.type]||m.type)+' | '+m.id;
+  document.getElementById('bc-card-dates').textContent='من: '+m.start+'  ←  حتى: '+m.end;
+  // رسم الباركود على canvas
+  try{
+    JsBarcode('#member-barcode-svg',bc,{
+      format:'CODE128',width:2.5,height:90,displayValue:true,
+      font:'Arial',fontSize:14,margin:8,background:'#ffffff',lineColor:'#000000'
+    });
+    // نسخ SVG إلى Canvas
+    const svg=document.getElementById('member-barcode-svg');
+    const canvas=document.getElementById('barcode-canvas');
+    const svgData=new XMLSerializer().serializeToString(svg);
+    const img=new Image();
+    const blob=new Blob([svgData],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    img.onload=function(){
+      canvas.width=img.width;canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0);
+      URL.revokeObjectURL(url);
+    };
+    img.src=url;
+  }catch(e){console.warn('barcode error',e);}
+  document.getElementById('wa-steps').style.display='none';
+  openModal('member-barcode-modal');
+}
+
+function getBarcodeDataURL(){
+  return new Promise(resolve=>{
+    const m=members.find(x=>x.id===_currentBarcodeId);
+    if(!m){resolve(null);return;}
+    const bc=m.barcode||m.id;
+    // إنشاء canvas كبير للبطاقة الكاملة
+    const canvas=document.createElement('canvas');
+    canvas.width=600;canvas.height=260;
+    const ctx=canvas.getContext('2d');
+    // خلفية بيضاء
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,600,260);
+    // شريط ذهبي علوي
+    const grad=ctx.createLinearGradient(0,0,600,0);
+    grad.addColorStop(0,'#f5c842');grad.addColorStop(1,'#e8a800');
+    ctx.fillStyle=grad;ctx.fillRect(0,0,600,8);
+    // اسم الجيم
+    ctx.fillStyle='#111';ctx.font='bold 26px Arial';ctx.textAlign='center';
+    ctx.fillText('X GYM',300,45);
+    // اسم العضو
+    ctx.fillStyle='#333';ctx.font='bold 18px Arial';
+    ctx.fillText(m.name,300,75);
+    // نوع الاشتراك
+    ctx.fillStyle='#777';ctx.font='13px Arial';
+    ctx.fillText((priceNames[m.type]||m.type)+' | '+m.id,300,97);
+    // رسم الباركود من SVG
+    const svg=document.getElementById('member-barcode-svg');
+    const svgData=new XMLSerializer().serializeToString(svg);
+    const blob=new Blob([svgData],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    const img=new Image();
+    img.onload=function(){
+      const bw=Math.min(500,img.width);const bh=img.height*(bw/img.width);
+      ctx.drawImage(img,(600-bw)/2,105,bw,bh);
+      URL.revokeObjectURL(url);
+      // تواريخ
+      ctx.fillStyle='#999';ctx.font='11px Arial';
+      ctx.fillText('من: '+m.start+'   حتى: '+m.end,300,105+bh+16);
+      // شريط سفلي
+      ctx.fillStyle=grad;ctx.fillRect(0,252,600,8);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror=()=>resolve(null);
+    img.src=url;
+  });
+}
+
+function downloadBarcodeImage(){
+  const m=members.find(x=>x.id===_currentBarcodeId);
+  if(!m)return;
+  getBarcodeDataURL().then(dataURL=>{
+    if(!dataURL){showNotif('تعذر إنشاء الصورة','warning');return;}
+    const a=document.createElement('a');
+    a.href=dataURL;
+    a.download='barcode_'+m.id+'_'+m.name.replace(/\s/g,'_')+'.png';
+    a.click();
+    // إظهار خطوات واتساب بعد التحميل
+    document.getElementById('wa-steps').style.display='block';
+    showNotif('تم تحميل الصورة — اضغط "فتح واتساب" لإرسالها','success');
+  });
+}
+
+function sendBarcodeWhatsApp(){
+  const m=members.find(x=>x.id===_currentBarcodeId);
+  if(!m){showNotif('لم يتم العثور على العضو','warning');return;}
+  const bc=m.barcode||m.id;
+  const gymName=localStorage.getItem('xgym_gym_name')||'X Gym';
+  // تحميل الصورة أولاً ثم فتح واتساب
+  getBarcodeDataURL().then(dataURL=>{
+    if(dataURL){
+      const a=document.createElement('a');
+      a.href=dataURL;
+      a.download='barcode_'+m.id+'.png';
+      a.click();
+    }
+    const msg=
+`مرحباً ${m.name} 👋
+أهلاً بك في *${gymName}*!
+
+✅ تم تفعيل اشتراكك بنجاح
+🏷️ نوع الاشتراك: ${priceNames[m.type]||m.type}
+📅 يبدأ: ${m.start}  |  ينتهي: ${m.end}
+🔢 رقم عضويتك: *${m.id}*
+📊 كود الدخول: *${bc}*
+
+📎 *صورة الباركود مرفقة في الرسائل السابقة*
+احتفظ بها لتسجيل حضورك عند الدخول 💪`;
+    setTimeout(()=>{
+      window.open(`https://wa.me/${m.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+      showNotif('تم تحميل الصورة وفتح واتساب لـ '+m.name,'whatsapp');
+    },600);
+  });
+}
+
+function printBarcode(){
+  const m=members.find(x=>x.id===_currentBarcodeId);
+  if(!m)return;
+  getBarcodeDataURL().then(dataURL=>{
+    const name=m.name;
+    const subLabel=(priceNames[m.type]||m.type)+' | '+m.id;
+    const w=window.open('','_blank','width=500,height=400');
+    w.document.write(`<html><body style="text-align:center;font-family:Arial,sans-serif;padding:20px;margin:0">
+      ${dataURL?`<img src="${dataURL}" style="max-width:100%;border-radius:8px">`:
+      `<div style="font-size:18px;font-weight:700">${name}</div><div>${subLabel}</div>`}
+      <script>window.onload=()=>{window.print();window.close();}<\/script>
+    </body></html>`);
+    w.document.close();
+  });
+}
+
+let zxingReader=null;
+let cameraStream=null;
+
+function openCameraScanner(){
+  openModal('camera-scanner-modal');
+  document.getElementById('camera-status').textContent='جاري تشغيل الكاميرا...';
+  document.getElementById('camera-status').style.color='var(--text3)';
+  const video=document.getElementById('camera-video');
+  if(typeof ZXing==='undefined'){
+    document.getElementById('camera-status').textContent='مكتبة القراءة غير متاحة، استخدم الإدخال اليدوي';
+    document.getElementById('camera-status').style.color='var(--red)';
+    return;
+  }
+  try{
+    zxingReader=new ZXing.BrowserMultiFormatReader();
+    zxingReader.decodeFromVideoDevice(null,video,(result,err)=>{
+      if(result){
+        document.getElementById('barcode-input').value=result.getText();
+        document.getElementById('camera-status').textContent='✓ تم مسح الباركود: '+result.getText();
+        document.getElementById('camera-status').style.color='var(--green)';
+        stopCamera();
+        setTimeout(()=>scanMember(),300);
+      }
+    });
+  }catch(e){
+    document.getElementById('camera-status').textContent='خطأ: '+e.message;
+    document.getElementById('camera-status').style.color='var(--red)';
+  }
+}
+
+function stopCamera(){
+  if(zxingReader){try{zxingReader.reset();}catch(e){}}
+  zxingReader=null;
+  closeModal('camera-scanner-modal');
+}
+function saveSettings(){
+  // حفظ بيانات الجيم
+  const gymPhone=document.getElementById('gym-phone');
+  const waNum=document.getElementById('whatsapp-num');
+  if(gymPhone)localStorage.setItem('xgym_gym_phone',gymPhone.value);
+  if(waNum)localStorage.setItem('xgym_wa_num',waNum.value);
+  lsSave();
+  showNotif('تم حفظ الإعدادات بنجاح','success');
+}
+
+function showNotif(msg,type){
+  const toast=document.getElementById('toast');
+  const icon=document.getElementById('toast-icon');
+  const title=document.getElementById('toast-title');
+  const msgEl=document.getElementById('toast-msg');
+  const icons={success:'fa-check-circle',warning:'fa-triangle-exclamation',whatsapp:'fa-whatsapp'};
+  const titles={success:'نجاح',warning:'تنبيه',whatsapp:'واتساب'};
+  toast.className='notif-toast '+type;
+  icon.className='fab fa-'+icons[type]||'fas fa-check';
+  if(type==='whatsapp')icon.className='fab fa-whatsapp';
+  else if(type==='success')icon.className='fas fa-check-circle';
+  else icon.className='fas fa-triangle-exclamation';
+  title.textContent=titles[type]||'تنبيه';
+  msgEl.textContent=msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),3500);
+}
+
+function updateTime(){
+  const now=new Date();
+  document.getElementById('current-time').textContent=now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('date-display').textContent=now.toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// Init
+updateTime();setInterval(updateTime,1000);
+renderDashboard();
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
+</script>
+</body>
+</html>
